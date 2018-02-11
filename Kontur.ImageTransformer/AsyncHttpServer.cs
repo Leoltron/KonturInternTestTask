@@ -73,7 +73,7 @@ namespace Kontur.ImageTransformer
                     if (listener.IsListening)
                     {
                         var context = listener.GetContext();
-                        Task.Run(() => HandleContextAsync(context));
+                        Task.Run(() => HandleContext(context));
                     }
                     else Thread.Sleep(0);
                 }
@@ -96,63 +96,26 @@ namespace Kontur.ImageTransformer
 
         private static void HandleContext(HttpListenerContext listenerContext)
         {
-            var match = RequestParser.TryParseRequest(listenerContext.Request);
-            if (match == null)
+            using (var result = RequestParser.ParseRequest(listenerContext.Request))
             {
-                listenerContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-                return;
+                var response = listenerContext.Response;
+                Logger.Info(
+                    $"{listenerContext.Request.HttpMethod} {listenerContext.Request.RawUrl} - {result.ResultCode}");
+                if (result.NoErrors)
+                    SendImageResponse(response, result.Apply());
+                response.StatusCode = (int) result.ResultCode;
+                response.Close();
             }
-
-            int i = 1;
-
-            Func<Bitmap, Bitmap> filter = GetFilter(match, ref i);
-
-            if (filter == null)
-            {
-                listenerContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-                return;
-            }
-
-            var x = int.Parse(match.Groups[i++].Value);
-            var y = int.Parse(match.Groups[i++].Value);
-            var width = int.Parse(match.Groups[i++].Value);
-            var height = int.Parse(match.Groups[i].Value);
-
-            var bitmap = new Bitmap(listenerContext.Request.InputStream).Cut(x, y, width, height);
-            if (bitmap == null)
-            {
-                listenerContext.Response.StatusCode = (int)HttpStatusCode.NoContent;
-                return;
-            }
-
-            bitmap = filter(bitmap);
-            SendImageResponse(listenerContext.Response, bitmap);
-        }
-
-        private static Func<Bitmap, Bitmap> GetFilter(Match match, ref int startIndex)
-        {
-            var filter = match.Groups[startIndex++].Value;
-            if (filter == "grayscale")
-                return BitmapExtensions.GrayScale;
-            if (filter.StartsWith("threshold"))
-            {
-                var coefficent = int.Parse(match.Groups[startIndex++].Value);
-                if (coefficent < 0 || coefficent > 100)
-                    return null;
-                return b => b.Threshold(coefficent);
-            }
-            if (filter == "sepia")
-                return BitmapExtensions.Sepia;
-
-            return null;
         }
 
         private static void SendImageResponse(HttpListenerResponse ctxResponse, Image bitmap)
         {
-            ctxResponse.ContentType = "image/png";
-            ctxResponse.StatusCode = (int) HttpStatusCode.OK;
-            bitmap.Save(ctxResponse.OutputStream, ImageFormat.Png);
-            ctxResponse.OutputStream.Close();
+            using (bitmap)
+            {
+                ctxResponse.ContentType = "image/png";
+                ctxResponse.StatusCode = (int) HttpStatusCode.OK;
+                bitmap.Save(ctxResponse.OutputStream, ImageFormat.Png);
+            }
         }
 
         private readonly HttpListener listener;
