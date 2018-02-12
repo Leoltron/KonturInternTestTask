@@ -1,7 +1,5 @@
-﻿using System;
-using System.Drawing;
+﻿using System.Drawing;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace Kontur.ImageTransformer
 {
@@ -9,15 +7,17 @@ namespace Kontur.ImageTransformer
     {
         Bitmap Process(Bitmap bitmap);
         IBitmapFilter TryParse(string s);
+        Size GetResultSize(Size srcSize);
     }
 
     public static class BitmapFilters
     {
         private static readonly IBitmapFilter[] FilterInstances =
         {
-            new GrayscaleFilter(),
-            new SepiaFilter(),
-            new ThresholdFilter()
+            new FlipHFilter(),
+            new FlipVFilter(),
+            new RotateCWFilter(),
+            new RotateCCWFilter()
         };
 
         public static IBitmapFilter TryParse(string s) => FilterInstances
@@ -25,85 +25,81 @@ namespace Kontur.ImageTransformer
             .FirstOrDefault(f => f != null);
     }
 
-    public class GrayscaleFilter : IBitmapFilter
+    public class FlipHFilter : IBitmapFilter
     {
         public Bitmap Process(Bitmap bitmap)
         {
-            for (var x = 0; x < bitmap.Width; x++)
-            for (var y = 0; y < bitmap.Height; y++)
-            {
-                var pixelColor = bitmap.GetPixel(x, y);
-                var intensity = (byte) ((pixelColor.R + pixelColor.G + pixelColor.B) / 3);
-                bitmap.SetPixel(x, y, Color.FromArgb(pixelColor.A, intensity, intensity, intensity));
-            }
-
+            bitmap.RotateFlip(RotateFlipType.RotateNoneFlipX);
             return bitmap;
         }
 
         public IBitmapFilter TryParse(string s)
         {
-            return s == "grayscale" ? new GrayscaleFilter() : null;
+            return s == "flip-h" ? new FlipHFilter() : null;
+        }
+
+        public Size GetResultSize(Size srcSize)
+        {
+            return srcSize;
         }
     }
 
-    public class SepiaFilter : IBitmapFilter
+    public class FlipVFilter : IBitmapFilter
     {
         public Bitmap Process(Bitmap bitmap)
         {
-            for (var x = 0; x < bitmap.Width; x++)
-            for (var y = 0; y < bitmap.Height; y++)
-            {
-                var oldColor = bitmap.GetPixel(x, y);
-                var oldR = oldColor.R;
-                var oldG = oldColor.G;
-                var oldB = oldColor.B;
-                var newR = (byte) Math.Min(255, (int) (oldR * .393 + oldG * .769 + oldB * .189));
-                var newG = (byte) Math.Min(255, (int) (oldR * .349 + oldG * .686 + oldB * .168));
-                var newB = (byte) Math.Min(255, (int) (oldR * .272 + oldG * .534 + oldB * .131));
-                bitmap.SetPixel(x, y, Color.FromArgb(oldColor.A, newR, newG, newB));
-            }
-
+            bitmap.RotateFlip(RotateFlipType.RotateNoneFlipY);
             return bitmap;
         }
 
         public IBitmapFilter TryParse(string s)
         {
-            return s == "sepia" ? new SepiaFilter() : null;
+            return s == "flip-v" ? new FlipVFilter() : null;
+        }
+
+        public Size GetResultSize(Size srcSize)
+        {
+            return srcSize;
         }
     }
 
-    public class ThresholdFilter : IBitmapFilter
+    public class RotateCWFilter : IBitmapFilter
     {
-        private readonly byte coefficent;
-
-        public ThresholdFilter(byte coefficent = 0)
-        {
-            this.coefficent = coefficent;
-        }
-
         public Bitmap Process(Bitmap bitmap)
         {
-            var border = 255 * coefficent / 100;
-            for (var x = 0; x < bitmap.Width; x++)
-            for (var y = 0; y < bitmap.Height; y++)
-            {
-                var pixelColor = bitmap.GetPixel(x, y);
-                var newRgbValue = (pixelColor.R + pixelColor.G + pixelColor.B) / 3 >= border ? 255 : 0;
-                bitmap.SetPixel(x, y, Color.FromArgb(pixelColor.A, newRgbValue, newRgbValue, newRgbValue));
-            }
-
+            bitmap.RotateFlip(RotateFlipType.Rotate90FlipNone);
             return bitmap;
         }
 
-        private static readonly Regex regex = new Regex(@"threshold\(([\d]{1,3})\)");
+        public IBitmapFilter TryParse(string s)
+        {
+            return s == "rotate-cw" ? new RotateCWFilter() : null;
+        }
+
+        public Size GetResultSize(Size srcSize)
+        {
+            return new Size(srcSize.Height, srcSize.Height);
+        }
+    }
+
+    public class RotateCCWFilter : IBitmapFilter
+    {
+        public Bitmap Process(Bitmap bitmap)
+        {
+            bitmap.RotateFlip(RotateFlipType.Rotate270FlipNone);
+            return bitmap;
+        }
 
         public IBitmapFilter TryParse(string s)
         {
-            var match = regex.Match(s);
-            if (!match.Success)
-                return null;
-            var c = int.Parse(match.Groups[1].Value);
-            return c <= 100 ? new ThresholdFilter((byte) c) : null;
+            return s == "rotate-ccw" ? new RotateCCWFilter() : null;
+        }
+
+        public Size GetResultSize(Size srcSize)
+        {
+            return new Size(srcSize.Height, srcSize.Height);
         }
     }
+
+    
 }

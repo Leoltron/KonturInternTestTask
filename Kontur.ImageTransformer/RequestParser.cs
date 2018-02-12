@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Drawing;
 using System.Net;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
 namespace Kontur.ImageTransformer
@@ -35,7 +34,7 @@ namespace Kontur.ImageTransformer
 
             var bitmap = new Bitmap(request.InputStream);
             var cuttingArea = Rectangle.Intersect(
-                new Rectangle(Point.Empty, bitmap.Size),
+                new Rectangle(Point.Empty, filter.GetResultSize(bitmap.Size)),
                 FromAdvancedXYWH(x, y, width, height)
             );
 
@@ -63,7 +62,7 @@ namespace Kontur.ImageTransformer
         }
     }
 
-    class RequestParseResult : IDisposable
+    internal class RequestParseResult : IDisposable
     {
         public readonly HttpStatusCode ResultCode;
 
@@ -89,7 +88,7 @@ namespace Kontur.ImageTransformer
 
         public Bitmap Apply()
         {
-            return filter.Process(bitmap.CutRectangle(cuttingRectangle));
+            return filter.Process(bitmap).CutRectangle(cuttingRectangle);
         }
 
         public void Dispose()
