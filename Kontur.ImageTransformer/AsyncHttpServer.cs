@@ -1,9 +1,8 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.IO;
 using System.Net;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -73,7 +72,8 @@ namespace Kontur.ImageTransformer
                     if (listener.IsListening)
                     {
                         var context = listener.GetContext();
-                        Task.Run(() => HandleContext(context));
+                        //Task.Run(() => HandleContextAsync(context));
+                        HandleContextAsync(context);
                     }
                     else Thread.Sleep(0);
                 }
@@ -89,13 +89,15 @@ namespace Kontur.ImageTransformer
             }
         }
 
-        private static async Task HandleContextAsync(HttpListenerContext listenerContext)
+        private static Task HandleContextAsync(HttpListenerContext listenerContext)
         {
-            await new Task(() => HandleContext(listenerContext));
+            return Task.Run(() => HandleContext(listenerContext));
         }
 
         private static void HandleContext(HttpListenerContext listenerContext)
         {
+            //var s = new Stopwatch();
+            //s.Start();
             using (var result = RequestParser.ParseRequest(listenerContext.Request))
             {
                 var response = listenerContext.Response;
@@ -106,6 +108,8 @@ namespace Kontur.ImageTransformer
                 response.StatusCode = (int) result.ResultCode;
                 response.Close();
             }
+            //s.Stop();
+            //Logger.Debug(s.ElapsedMilliseconds+"ms");
         }
 
         private static void SendImageResponse(HttpListenerResponse ctxResponse, Image bitmap)

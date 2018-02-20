@@ -2,8 +2,9 @@
 
 namespace Kontur.ImageTransformer
 {
-    class Logger
+    internal static class Logger
     {
+        private static int id = 0;
         public static void Log(object message, ConsoleColor foreColor)
         {
             var prevColor = Console.ForegroundColor;
@@ -19,7 +20,8 @@ namespace Kontur.ImageTransformer
 
         public static void Info(object message)
         {
-            Log(message, ConsoleColor.White);
+            var i = id++;
+            Log($"[{i}] {message}", ConsoleColor.White);
         }
 
         public static void Warn(object message)
