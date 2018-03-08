@@ -57,9 +57,7 @@ namespace Kontur.ImageTransformer
                 return;
 
             disposed = true;
-
             Stop();
-
             listener.Close();
         }
 
@@ -71,9 +69,11 @@ namespace Kontur.ImageTransformer
                 {
                     if (listener.IsListening)
                     {
+                        //var s = Stopwatch.StartNew();
                         var context = listener.GetContext();
-                        //Task.Run(() => HandleContextAsync(context));
                         HandleContextAsync(context);
+                        //s.Stop();
+                        //Console.WriteLine("Got in "+s.ElapsedMilliseconds);
                     }
                     else Thread.Sleep(0);
                 }
@@ -84,20 +84,18 @@ namespace Kontur.ImageTransformer
                 catch (Exception exception)
                 {
                     Logger.Error(exception);
-                    // TODO: log errors
                 }
             }
         }
 
-        private static Task HandleContextAsync(HttpListenerContext listenerContext)
+        private static void HandleContextAsync(HttpListenerContext listenerContext)
         {
-            return Task.Run(() => HandleContext(listenerContext));
+            Task.Run(() => HandleContext(listenerContext));
         }
 
         private static void HandleContext(HttpListenerContext listenerContext)
         {
-            //var s = new Stopwatch();
-            //s.Start();
+            //var s = Stopwatch.StartNew();
             using (var result = RequestParser.ParseRequest(listenerContext.Request))
             {
                 var response = listenerContext.Response;
@@ -108,15 +106,17 @@ namespace Kontur.ImageTransformer
                 response.StatusCode = (int) result.ResultCode;
                 response.Close();
             }
+
             //s.Stop();
-            //Logger.Debug(s.ElapsedMilliseconds+"ms");
+            //Console.WriteLine(" (Handled in " + s.ElapsedMilliseconds + "ms)");
         }
 
+        private const string ContentTypeImagePng = "image/png";
         private static void SendImageResponse(HttpListenerResponse ctxResponse, Image bitmap)
         {
             using (bitmap)
             {
-                ctxResponse.ContentType = "image/png";
+                ctxResponse.ContentType = ContentTypeImagePng;
                 ctxResponse.StatusCode = (int) HttpStatusCode.OK;
                 bitmap.Save(ctxResponse.OutputStream, ImageFormat.Png);
             }

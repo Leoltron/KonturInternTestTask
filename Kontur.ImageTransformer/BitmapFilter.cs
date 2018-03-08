@@ -3,6 +3,7 @@ using System.Linq;
 
 namespace Kontur.ImageTransformer
 {
+    //TODO: change to singletons?
     public interface IBitmapFilter
     {
         Bitmap Process(Bitmap bitmap);
@@ -21,8 +22,7 @@ namespace Kontur.ImageTransformer
         };
 
         public static IBitmapFilter TryParse(string s) => FilterInstances
-            .Select(filter => filter.TryParse(s))
-            .FirstOrDefault(f => f != null);
+            .FirstOrDefault(filter => filter.TryParse(s) != null);
     }
 
     public class FlipHFilter : IBitmapFilter
@@ -78,7 +78,7 @@ namespace Kontur.ImageTransformer
 
         public Size GetResultSize(Size srcSize)
         {
-            return new Size(srcSize.Height, srcSize.Height);
+            return new Size(srcSize.Height, srcSize.Width);
         }
     }
 
@@ -97,7 +97,7 @@ namespace Kontur.ImageTransformer
 
         public Size GetResultSize(Size srcSize)
         {
-            return new Size(srcSize.Height, srcSize.Height);
+            return new Size(srcSize.Height, srcSize.Width);
         }
     }
 
