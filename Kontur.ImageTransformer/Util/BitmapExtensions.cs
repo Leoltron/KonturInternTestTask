@@ -1,6 +1,6 @@
 ﻿using System.Drawing;
 
-namespace Kontur.ImageTransformer
+namespace Kontur.ImageTransformer.Util
 {
     public static class BitmapExtensions
     {

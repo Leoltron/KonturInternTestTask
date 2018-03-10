@@ -1,24 +1,17 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Kontur.ImageTransformer.Util;
 
 namespace Kontur.ImageTransformer
 {
     internal class AsyncHttpServer : IDisposable
     {
-        public static int TasksExecuting = 0;
-        public static long LastTaskSpeedMS = 0;
-
-        private readonly int maxAsyncTasks = Environment.ProcessorCount * 5;
-
-        public void LogStats()
-        {
-            Logger.Debug($"Tasks Executing: {TasksExecuting}/" + maxAsyncTasks);
-        }
+        private static readonly int MaxAsyncTasks = Environment.ProcessorCount * 5;
+        private static int tasksExecuting;
 
         public AsyncHttpServer()
         {
@@ -30,19 +23,10 @@ namespace Kontur.ImageTransformer
             lock (listener)
             {
                 if (isRunning) return;
+
                 listener.Prefixes.Clear();
                 listener.Prefixes.Add(prefix);
                 listener.Start();
-
-                //new Thread(() =>
-                //{
-                //    while (true)
-                //    {
-                //        LogStats();
-                //        Thread.Sleep(200);
-                //    }
-                //})
-                //{ IsBackground = true }.Start();
 
                 listenerThread = new Thread(Listen)
                 {
@@ -90,8 +74,9 @@ namespace Kontur.ImageTransformer
                     if (listener.IsListening)
                     {
                         var context = listener.GetContext();
-                        if (TasksExecuting >= maxAsyncTasks)
-                            RespondWithServiceUnavailable(context);
+
+                        if (tasksExecuting >= MaxAsyncTasks)
+                            RespondWithServiceUnavailable(context.Response);
                         else
                             HandleContextAsync(context);
                     }
@@ -108,48 +93,39 @@ namespace Kontur.ImageTransformer
             }
         }
 
-        private static void RespondWithServiceUnavailable(HttpListenerContext context)
+        private static void RespondWithServiceUnavailable(HttpListenerResponse httpListenerResponse)
         {
-            context.Response.StatusCode = 503;
-            context.Response.Close();
+            httpListenerResponse.StatusCode = 503;
+            httpListenerResponse.Close();
         }
 
         private static void HandleContextAsync(HttpListenerContext listenerContext)
         {
-            Interlocked.Increment(ref TasksExecuting);
+            Interlocked.Increment(ref tasksExecuting);
             Task.Run(() => HandleContext(listenerContext));
         }
 
         private static void HandleContext(HttpListenerContext listenerContext)
         {
-            //var s = Stopwatch.StartNew();
             using (var result = RequestParser.ParseRequest(listenerContext.Request))
             {
                 var response = listenerContext.Response;
-                //Logger.Info(
-                //    $"{listenerContext.Request.HttpMethod} {listenerContext.Request.RawUrl} - {result.ResultCode}");
                 if (result.NoErrors)
-                    SendImageResponse(response, result.Apply());
+                    SendImageResponse(response, result.Bitmap);
                 response.StatusCode = (int) result.ResultCode;
                 response.Close();
             }
 
-            //s.Stop();
-            //LastTaskSpeedMS = s.ElapsedMilliseconds;
-
-            Interlocked.Decrement(ref TasksExecuting);
+            Interlocked.Decrement(ref tasksExecuting);
         }
 
         private const string ContentTypeImagePng = "image/png";
 
-        private static void SendImageResponse(HttpListenerResponse ctxResponse, Image bitmap)
+        private static void SendImageResponse(HttpListenerResponse response, Image bitmap)
         {
-            using (bitmap)
-            {
-                ctxResponse.ContentType = ContentTypeImagePng;
-                ctxResponse.StatusCode = (int) HttpStatusCode.OK;
-                bitmap.Save(ctxResponse.OutputStream, ImageFormat.Png);
-            }
+            response.ContentType = ContentTypeImagePng;
+            response.StatusCode = (int) HttpStatusCode.OK;
+            bitmap.Save(response.OutputStream, ImageFormat.Png);
         }
 
         private readonly HttpListener listener;

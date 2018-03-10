@@ -48,10 +48,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BitmapExtensions.cs" />
-    <Compile Include="BitmapFilter.cs" />
+    <Compile Include="Util\BitmapExtensions.cs" />
+    <Compile Include="Filters\BitmapFilters.cs" />
     <Compile Include="EntryPoint.cs" />
-    <Compile Include="Logger.cs" />
+    <Compile Include="Filters\FlipHFilter.cs" />
+    <Compile Include="Filters\FlipVFilter.cs" />
+    <Compile Include="Filters\IBitmapFilter.cs" />
+    <Compile Include="Filters\RotateCCWFilter.cs" />
+    <Compile Include="Filters\RotateCWFilter.cs" />
+    <Compile Include="Util\Logger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="AsyncHttpServer.cs" />
     <Compile Include="RequestParser.cs" />
@@ -59,5 +64,6 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

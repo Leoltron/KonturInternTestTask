@@ -1,17 +1,14 @@
 ﻿using System;
 
-namespace Kontur.ImageTransformer
+namespace Kontur.ImageTransformer.Util
 {
     internal static class Logger
     {
-        private const bool LogEnabled = true;
 
-        private static int id = 0;
-        public static void Log(object message, ConsoleColor foreColor)
+        public static void Log(object message, ConsoleColor textColor)
         {
-            if(!LogEnabled) return;
             var prevColor = Console.ForegroundColor;
-            Console.ForegroundColor = foreColor;
+            Console.ForegroundColor = textColor;
             Console.WriteLine(message);
             Console.ForegroundColor = prevColor;
         }
@@ -23,8 +20,7 @@ namespace Kontur.ImageTransformer
 
         public static void Info(object message)
         {
-            var i = id++;
-            Log($"[{i}] {message}", ConsoleColor.White);
+            Log(message, ConsoleColor.White);
         }
 
         public static void Warn(object message)
