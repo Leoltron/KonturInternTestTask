@@ -32,7 +32,19 @@ namespace Kontur.ImageTransformer
             var width = int.Parse(match.Groups[4].Value);
             var height = int.Parse(match.Groups[5].Value);
 
-            var bitmap = new Bitmap(request.InputStream);
+            Bitmap bitmap;
+            try
+            {
+                bitmap = new Bitmap(request.InputStream);
+            }
+            catch (ArgumentException)
+            {
+                return RequestParseResult.BadRequest;
+            }
+
+            if (bitmap.Height > 1000 || bitmap.Width > 1000)
+                return RequestParseResult.BadRequest;
+
             var cuttingArea = Rectangle.Intersect(
                 new Rectangle(Point.Empty, filter.GetResultSize(bitmap.Size)),
                 FromAdvancedXYWH(x, y, width, height)
@@ -96,7 +108,7 @@ namespace Kontur.ImageTransformer
             bitmap?.Dispose();
         }
 
-        public static RequestParseResult BadRequest => new RequestParseResult(HttpStatusCode.BadRequest);
-        public static RequestParseResult NoContent => new RequestParseResult(HttpStatusCode.NoContent);
+        public static readonly RequestParseResult BadRequest = new RequestParseResult(HttpStatusCode.BadRequest);
+        public static readonly RequestParseResult NoContent = new RequestParseResult(HttpStatusCode.NoContent);
     }
 }

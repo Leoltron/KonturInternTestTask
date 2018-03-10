@@ -4,9 +4,12 @@ namespace Kontur.ImageTransformer
 {
     internal static class Logger
     {
+        private const bool LogEnabled = true;
+
         private static int id = 0;
         public static void Log(object message, ConsoleColor foreColor)
         {
+            if(!LogEnabled) return;
             var prevColor = Console.ForegroundColor;
             Console.ForegroundColor = foreColor;
             Console.WriteLine(message);

@@ -10,6 +10,16 @@ namespace Kontur.ImageTransformer
 {
     internal class AsyncHttpServer : IDisposable
     {
+        public static int TasksExecuting = 0;
+        public static long LastTaskSpeedMS = 0;
+
+        private readonly int maxAsyncTasks = Environment.ProcessorCount * 5;
+
+        public void LogStats()
+        {
+            Logger.Debug($"Tasks Executing: {TasksExecuting}/" + maxAsyncTasks);
+        }
+
         public AsyncHttpServer()
         {
             listener = new HttpListener();
@@ -23,6 +33,16 @@ namespace Kontur.ImageTransformer
                 listener.Prefixes.Clear();
                 listener.Prefixes.Add(prefix);
                 listener.Start();
+
+                //new Thread(() =>
+                //{
+                //    while (true)
+                //    {
+                //        LogStats();
+                //        Thread.Sleep(200);
+                //    }
+                //})
+                //{ IsBackground = true }.Start();
 
                 listenerThread = new Thread(Listen)
                 {
@@ -69,11 +89,11 @@ namespace Kontur.ImageTransformer
                 {
                     if (listener.IsListening)
                     {
-                        //var s = Stopwatch.StartNew();
                         var context = listener.GetContext();
-                        HandleContextAsync(context);
-                        //s.Stop();
-                        //Console.WriteLine("Got in "+s.ElapsedMilliseconds);
+                        if (TasksExecuting >= maxAsyncTasks)
+                            RespondWithServiceUnavailable(context);
+                        else
+                            HandleContextAsync(context);
                     }
                     else Thread.Sleep(0);
                 }
@@ -88,8 +108,15 @@ namespace Kontur.ImageTransformer
             }
         }
 
+        private static void RespondWithServiceUnavailable(HttpListenerContext context)
+        {
+            context.Response.StatusCode = 503;
+            context.Response.Close();
+        }
+
         private static void HandleContextAsync(HttpListenerContext listenerContext)
         {
+            Interlocked.Increment(ref TasksExecuting);
             Task.Run(() => HandleContext(listenerContext));
         }
 
@@ -99,8 +126,8 @@ namespace Kontur.ImageTransformer
             using (var result = RequestParser.ParseRequest(listenerContext.Request))
             {
                 var response = listenerContext.Response;
-                Logger.Info(
-                    $"{listenerContext.Request.HttpMethod} {listenerContext.Request.RawUrl} - {result.ResultCode}");
+                //Logger.Info(
+                //    $"{listenerContext.Request.HttpMethod} {listenerContext.Request.RawUrl} - {result.ResultCode}");
                 if (result.NoErrors)
                     SendImageResponse(response, result.Apply());
                 response.StatusCode = (int) result.ResultCode;
@@ -108,10 +135,13 @@ namespace Kontur.ImageTransformer
             }
 
             //s.Stop();
-            //Console.WriteLine(" (Handled in " + s.ElapsedMilliseconds + "ms)");
+            //LastTaskSpeedMS = s.ElapsedMilliseconds;
+
+            Interlocked.Decrement(ref TasksExecuting);
         }
 
         private const string ContentTypeImagePng = "image/png";
+
         private static void SendImageResponse(HttpListenerResponse ctxResponse, Image bitmap)
         {
             using (bitmap)
