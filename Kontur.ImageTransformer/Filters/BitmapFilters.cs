@@ -4,7 +4,7 @@ namespace Kontur.ImageTransformer.Filters
 {
     public static class BitmapFilters
     {
-        private static readonly IBitmapFilter[] FilterInstances =
+        private static readonly IImageFilter[] FilterInstances =
         {
             FlipHFilter.Instance,
             FlipVFilter.Instance,
@@ -12,6 +12,6 @@ namespace Kontur.ImageTransformer.Filters
             RotateCCWFilter.Instance
         };
 
-        public static IBitmapFilter TryParse(string s) => FilterInstances.FirstOrDefault(filter => filter.TryParse(s) != null);
+        public static IImageFilter TryParse(string s) => FilterInstances.FirstOrDefault(filter => filter.TryParse(s) != null);
     }
 }

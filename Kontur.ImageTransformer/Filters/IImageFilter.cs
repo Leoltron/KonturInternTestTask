@@ -2,12 +2,12 @@
 
 namespace Kontur.ImageTransformer.Filters
 {
-    public interface IBitmapFilter
+    public interface IImageFilter
     {
-        IBitmapFilter TryParse(string s);
+        IImageFilter TryParse(string s);
 
         Size ResultSizeFor(Size srcSize);
 
-        void Apply(Bitmap bitmap);
+        void Apply(Image image);
     }
 }

@@ -93,39 +93,37 @@ namespace Kontur.ImageTransformer
             }
         }
 
-        private static void RespondWithServiceUnavailable(HttpListenerResponse httpListenerResponse)
+        private static void RespondWithServiceUnavailable(HttpListenerResponse response)
         {
-            httpListenerResponse.StatusCode = 503;
-            httpListenerResponse.Close();
+            response.StatusCode = 503;
+            response.Close();
         }
 
-        private static void HandleContextAsync(HttpListenerContext listenerContext)
+        private static async void HandleContextAsync(HttpListenerContext context)
         {
             Interlocked.Increment(ref tasksExecuting);
-            Task.Run(() => HandleContext(listenerContext));
+            await Task.Run(() => HandleContext(context));
+            Interlocked.Decrement(ref tasksExecuting);
         }
 
-        private static void HandleContext(HttpListenerContext listenerContext)
+        private static void HandleContext(HttpListenerContext context)
         {
-            using (var result = RequestParser.ParseRequest(listenerContext.Request))
+            using (var result = RequestParser.ParseRequest(context.Request))
             {
-                var response = listenerContext.Response;
+                var response = context.Response;
+                response.StatusCode = (int)result.ResultCode;
                 if (result.NoErrors)
-                    SendImageResponse(response, result.Bitmap);
-                response.StatusCode = (int) result.ResultCode;
+                    SendImageResponse(response, result.Image);
                 response.Close();
             }
-
-            Interlocked.Decrement(ref tasksExecuting);
         }
 
         private const string ContentTypeImagePng = "image/png";
 
-        private static void SendImageResponse(HttpListenerResponse response, Image bitmap)
+        private static void SendImageResponse(HttpListenerResponse response, Image image)
         {
             response.ContentType = ContentTypeImagePng;
-            response.StatusCode = (int) HttpStatusCode.OK;
-            bitmap.Save(response.OutputStream, ImageFormat.Png);
+            image.Save(response.OutputStream, ImageFormat.Png);
         }
 
         private readonly HttpListener listener;

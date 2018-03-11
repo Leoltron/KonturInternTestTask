@@ -3,7 +3,6 @@ using System.Drawing;
 using System.Net;
 using System.Text.RegularExpressions;
 using Kontur.ImageTransformer.Filters;
-using Kontur.ImageTransformer.Util;
 
 namespace Kontur.ImageTransformer
 {
@@ -29,24 +28,24 @@ namespace Kontur.ImageTransformer
             if (filter == null)
                 return RequestParseResult.BadRequest;
 
-            Bitmap bitmap;
+            Image image;
             try
             {
-                bitmap = new Bitmap(request.InputStream);
+                image = Image.FromStream(request.InputStream, false, false);
             }
-            catch (ArgumentException)
+            catch (Exception)
             {
                 return RequestParseResult.BadRequest;
             }
-            if (bitmap.Height > MaxImageHeight || bitmap.Width > MaxImageWidth)
+            if (image.Height > MaxImageHeight || image.Width > MaxImageWidth)
                 return RequestParseResult.BadRequest;
 
             var cuttingArea = Rectangle.Intersect(
-                new Rectangle(Point.Empty, filter.ResultSizeFor(bitmap.Size)),
+                new Rectangle(Point.Empty, filter.ResultSizeFor(image.Size)),
                 ParseCuttingArea(match)
             );
 
-            return IsAreaEmpty(cuttingArea) ? RequestParseResult.NoContent : new RequestParseResult(bitmap, filter, cuttingArea);
+            return IsAreaEmpty(cuttingArea) ? RequestParseResult.NoContent : new RequestParseResult(image, filter, cuttingArea);
         }
 
         private static bool IsPostRequest(HttpListenerRequest request)
@@ -84,35 +83,6 @@ namespace Kontur.ImageTransformer
                 y += height;
                 height = -height;
             }
-        }
-    }
-
-    internal class RequestParseResult : IDisposable
-    {
-        public static readonly RequestParseResult BadRequest = new RequestParseResult(HttpStatusCode.BadRequest);
-        public static readonly RequestParseResult NoContent = new RequestParseResult(HttpStatusCode.NoContent);
-
-        public readonly HttpStatusCode ResultCode;
-
-        public bool NoErrors => ResultCode == HttpStatusCode.OK;
-        public readonly Bitmap Bitmap;
-
-        private RequestParseResult(HttpStatusCode resultCode)
-        {
-            ResultCode = resultCode;
-        }
-
-        public RequestParseResult(Bitmap bitmap, IBitmapFilter filter, Rectangle cuttingRectangle)
-        {
-            ResultCode = HttpStatusCode.OK;
-            filter.Apply(bitmap);
-            Bitmap = bitmap.CutRectangle(cuttingRectangle);
-            bitmap.Dispose();
-        }
-
-        public void Dispose()
-        {
-            Bitmap?.Dispose();
         }
     }
 }

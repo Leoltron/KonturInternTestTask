@@ -2,16 +2,16 @@
 
 namespace Kontur.ImageTransformer.Filters
 {
-    public class FlipVFilter : IBitmapFilter
+    public class FlipVFilter : IImageFilter
     {
         public static readonly FlipVFilter Instance = new FlipVFilter();
 
-        public void Apply(Bitmap bitmap)
+        public void Apply(Image image)
         {
-            bitmap.RotateFlip(RotateFlipType.RotateNoneFlipY);
+            image.RotateFlip(RotateFlipType.RotateNoneFlipY);
         }
 
-        public IBitmapFilter TryParse(string s)
+        public IImageFilter TryParse(string s)
         {
             return s == "flip-v" ? Instance : null;
         }

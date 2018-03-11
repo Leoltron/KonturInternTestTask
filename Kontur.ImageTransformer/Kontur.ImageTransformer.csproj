@@ -48,12 +48,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="RequestParseResult.cs" />
     <Compile Include="Util\BitmapExtensions.cs" />
     <Compile Include="Filters\BitmapFilters.cs" />
     <Compile Include="EntryPoint.cs" />
     <Compile Include="Filters\FlipHFilter.cs" />
     <Compile Include="Filters\FlipVFilter.cs" />
-    <Compile Include="Filters\IBitmapFilter.cs" />
+    <Compile Include="Filters\IImageFilter.cs" />
     <Compile Include="Filters\RotateCCWFilter.cs" />
     <Compile Include="Filters\RotateCWFilter.cs" />
     <Compile Include="Util\Logger.cs" />

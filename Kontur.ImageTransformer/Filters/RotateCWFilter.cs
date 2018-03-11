@@ -2,16 +2,16 @@
 
 namespace Kontur.ImageTransformer.Filters
 {
-    public class RotateCWFilter : IBitmapFilter
+    public class RotateCWFilter : IImageFilter
     {
         public static readonly RotateCWFilter Instance = new RotateCWFilter();
 
-        public void Apply(Bitmap bitmap)
+        public void Apply(Image image)
         {
-            bitmap.RotateFlip(RotateFlipType.Rotate90FlipNone);
+            image.RotateFlip(RotateFlipType.Rotate90FlipNone);
         }
 
-        public IBitmapFilter TryParse(string s)
+        public IImageFilter TryParse(string s)
         {
             return s == "rotate-cw" ? Instance : null;
         }

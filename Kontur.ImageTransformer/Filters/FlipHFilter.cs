@@ -2,16 +2,16 @@
 
 namespace Kontur.ImageTransformer.Filters
 {
-    public class FlipHFilter : IBitmapFilter
+    public class FlipHFilter : IImageFilter
     {
         public static readonly FlipHFilter Instance = new FlipHFilter();
 
-        public void Apply(Bitmap bitmap)
+        public void Apply(Image image)
         {
-            bitmap.RotateFlip(RotateFlipType.RotateNoneFlipX);
+            image.RotateFlip(RotateFlipType.RotateNoneFlipX);
         }
 
-        public IBitmapFilter TryParse(string s)
+        public IImageFilter TryParse(string s)
         {
             return s == "flip-h" ? Instance : null;
         }
