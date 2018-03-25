@@ -2,7 +2,7 @@
 
 namespace Kontur.ImageTransformer.Filters
 {
-    public static class BitmapFilters
+    public static class ImageFilters
     {
         private static readonly IImageFilter[] FilterInstances =
         {

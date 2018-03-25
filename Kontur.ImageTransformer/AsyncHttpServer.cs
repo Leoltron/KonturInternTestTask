@@ -108,12 +108,12 @@ namespace Kontur.ImageTransformer
 
         private static void HandleContext(HttpListenerContext context)
         {
-            using (var result = RequestParser.ParseRequest(context.Request))
+            using (var parseResult = RequestParser.ParseRequest(context.Request))
             {
                 var response = context.Response;
-                response.StatusCode = (int)result.ResultCode;
-                if (result.NoErrors)
-                    SendImageResponse(response, result.Image);
+                response.StatusCode = (int)parseResult.ResultCode;
+                if (parseResult.NoErrors)
+                    SendImageResponse(response, parseResult.Image);
                 response.Close();
             }
         }

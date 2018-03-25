@@ -21,9 +21,8 @@ namespace Kontur.ImageTransformer
             ResultCode = resultCode;
         }
 
-        public RequestParseResult(Image image, IImageFilter filter, Rectangle cuttingRectangle)
+        public RequestParseResult(Image image, IImageFilter filter, Rectangle cuttingRectangle) : this(HttpStatusCode.OK)
         {
-            ResultCode = HttpStatusCode.OK;
             filter.Apply(image);
             Image = image.CutRectangle(cuttingRectangle);
             image.Dispose();

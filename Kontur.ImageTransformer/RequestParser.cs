@@ -24,7 +24,7 @@ namespace Kontur.ImageTransformer
             if (!match.Success)
                 return RequestParseResult.BadRequest;
 
-            var filter = BitmapFilters.TryParse(match.Groups[1].Value);
+            var filter = ImageFilters.TryParse(match.Groups[1].Value);
             if (filter == null)
                 return RequestParseResult.BadRequest;
 
